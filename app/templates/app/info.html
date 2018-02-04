@@ -1,0 +1,132 @@
+
+{% load staticfiles %}
+
+<div id="line-chart" style="width:100%"></div>
+<script type="text/javascript" src="{% static 'js/plotly.js' %}"></script>  
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>  
+
+<script>
+const company_id = '{{company_id}}'
+console.log(company_id)
+function fetchResponse(url_to_hit, completion)
+{
+    $.ajax({
+        url: url_to_hit,//'/app/135/company_cumulative_revenue',
+        dataType: 'json',
+        success: function(res){
+            completion(res);
+        }});
+}
+
+        //function (res) {
+        // var revenue=[],customers=[],date=[],str_dates =[]
+        // for(var i=0;i<res.length;i++)
+        // {
+        //     revenue.push(res[i].cum_revenue)
+        //     date.push(i)
+        //     str_dates.push(res[i].month+"-"+res[i].year)
+        // }
+        //     drawChart(date,revenue, str_dates)
+        // }
+
+fetchResponse('/app/'+company_id+'/company_cumulative_revenue', function(res){
+    // here the cumulative revenue is been recieved
+    var revenue=[],customers=[],date=[],str_dates =[]
+    for(var i=0;i<res.length;i++)
+    {
+        revenue.push(res[i].cum_revenue)
+        date.push(i)
+        str_dates.push(res[i].month+"-"+res[i].year)
+    }
+
+
+    fetchResponse('/app/'+company_id+'/company_cumulative_customer', function(res2)
+    {
+        //cum_customers
+        for(var i=0;i<res2.length;i++)
+        {
+            customers.push(res2[i].cum_customers)
+        }
+
+        console.log(customers)
+
+        drawChart(date,revenue, str_dates, customers)
+    });
+})
+
+
+
+
+
+
+
+</script>
+<script>
+    function drawChart(date, revenue, str_dates,customers)
+     {
+        var lineDiv = document.getElementById('line-chart');
+   
+        var traceA = {
+          x: date,
+          y: revenue,
+          type: 'line',
+          fill: 'tozeroy',
+          name:'Revenue',
+        };
+        var traceB = {
+          x: date,
+          y: customers,
+          type: 'scatter',
+          yaxis:'y2',
+          name:'Active Customers',
+        };
+         
+        var data = [traceA, traceB];
+         
+        var layout = {
+          title:'Total MRR (Monthly Recurring Revenue) and customers',
+          height: 500,
+          font: {
+            family: 'Lato',
+            size: 16,
+            color: 'rgb(100,150,200)'
+          },
+          plot_bgcolor: 'rgba(200,255,0,0.1)',
+          margin: {
+            pad: 10
+          },
+          xaxis: {
+            title: '',
+            titlefont: {
+              color: 'black',
+              size: 12
+            },
+            rangemode: 'tozero',
+            ticktext:str_dates,
+            tickvals:date,
+            tickmode:"array",
+
+          },
+          yaxis: {
+            title: '',
+            titlefont: {
+              color: 'black',
+              size: 12
+            },
+            rangemode: 'tozero'
+          },
+          yaxis2: {
+            title: '',
+            titlefont: {
+              color: 'black',
+              size: 12
+            },
+            overlaying: 'y',
+            side:'right',
+            rangemode: 'tozero'
+          }
+        };
+        Plotly.plot( lineDiv, data, layout );
+     }  
+      </script>
+  

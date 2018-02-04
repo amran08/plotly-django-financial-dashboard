@@ -1,0 +1,76 @@
+
+{% load staticfiles %}
+<html>
+    <head>
+        <title>Dashboard App</title>
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    </head>
+    <body bgcolor="yellow">
+        <div class="container">
+            <div class="row">
+                <br><br>
+                <div class="col-md-12">
+                   <div class="col-md-6 col-md-offset-3">
+                    {% block content %}
+                      <form method="post" action="{% url 'app:add-company'%}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="col-md-12">
+                         <div class="col-md-5 col-md-offset-5">
+                          <input type="submit" class="btn btn-md btn-success" value="Submit" />              
+                           <div>
+                        </div>  
+                      </form>
+                     
+                    {% endblock %}
+                   <br>  
+                    </div>
+                    <div class="col-md-12">                       
+                           
+                            {% if messages %}
+                            
+                                {% for message in messages %}
+                                <div class="alert {{ message.tags }}">{{ message }}</div>
+                                {% endfor %}
+                            
+                            {% endif %}
+                            
+                     </div>   
+
+            </div>
+        </div>
+        </div>
+        <div class="container">
+            <div class="row">      
+                <div class="col-md-12">
+                      <div class="col-md-6 col-md-offset-3">
+                        <div class="table-responsive">
+                        <table class="table table-bordered table-striped">                 
+                                <tr class="table">
+                                  <th>Company Name</th>
+                                  <th>Uploaded At</th>
+                                  <th>View</th>
+                                </tr>
+                                {% for company in company_list %}
+                                <tr>
+                                  <th> {{ company.name }}</th>
+                                  <th> {{ company.created_at }}</th>
+                                  <th><a href="/app/{{company.id}}/company-info/">View</a></th>
+                                </tr> 
+                                {% endfor %}
+                         </table>
+                        </div>
+                       </div>
+                    </div>
+                </div>
+            </div>
+    </body>
+</html>
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bootstrap-upload-progress.js' %}"></script>
+
+<script>
+
+</script>
