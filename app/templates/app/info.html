@@ -1,70 +1,405 @@
 
-{% load staticfiles %}
 
-<div id="line-chart" style="width:100%"></div>
+{% load staticfiles %}
+<head>
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+<link href="{% static 'favicon/chart-152-215430.png' %}" rel="icon" type="image/x-icon" />
+</head>
+<body>
+        <div class="se-pre-con"></div>
+        <div id="plot1" style="width:100%"></div>
+        <div id ="plot2" style='width: 100%' ></div>
+        <div id='plot3' style='width: 100%'></div>
+        <div id="plot4" style="width:1648; height:800px;"></div>
+</body>
 <script type="text/javascript" src="{% static 'js/plotly.js' %}"></script>  
 <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>  
-
+<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.2/modernizr.js"></script>
 <script>
 const company_id = '{{company_id}}'
 console.log(company_id)
+$(window).on('load', function() {
+		// Animate loader off screen
+		$(".se-pre-con").fadeOut( "slow", function() {
+    });
+});
+$(document).ready(function(){
+    fetchResponse('/app/'+company_id+'/company_observation_cohort', function(res){
+        // here the cumulative revenue is been recieved
+        var revenue=[],customers=[],date=[],str_dates =[]
+        for(var i=0;i<res.length;i++)
+        {
+            revenue.push(res[i].revenue)
+            date.push(res[i].date)   
+        }
+        console.log("Plot 2");
+        console.log(res);
+        plot2(res)
+        plot4(res)
+    })
+
+    // plot #1
+    fetchResponse('/app/'+company_id+'/company_cumulative_revenue', function(res){
+        // here the cumulative revenue is been recieved
+        var revenue=[],customers=[],date=[],str_dates =[]
+        for(var i=0;i<res.length;i++)
+        {
+            revenue.push(res[i].cum_revenue)
+            date.push(i)
+            str_dates.push(res[i].month+"-"+res[i].year)
+        }
+
+
+        fetchResponse('/app/'+company_id+'/company_cumulative_customer', function(res2)
+        {
+            //cum_customers
+            for(var i=0;i<res2.length;i++)
+            {
+                customers.push(res2[i].cum_customers)
+            }
+
+            //console.log(customers)
+
+            plot1(date,revenue, str_dates, customers)
+        });
+    })
+
+    // plot #3
+    fetchResponse('/app/'+company_id+'/company_gross_mrr_churn', function(res3)
+    {
+        console.log("Plot #3")
+        console.log(res3)
+        plot3(res3[0],res3[1]); /// churn percentage , upsell or downsell 
+    });
+
+})
+
 function fetchResponse(url_to_hit, completion)
+
 {
     $.ajax({
-        url: url_to_hit,//'/app/135/company_cumulative_revenue',
+        url: url_to_hit,
         dataType: 'json',
         success: function(res){
             completion(res);
         }});
 }
 
-        //function (res) {
-        // var revenue=[],customers=[],date=[],str_dates =[]
-        // for(var i=0;i<res.length;i++)
-        // {
-        //     revenue.push(res[i].cum_revenue)
-        //     date.push(i)
-        //     str_dates.push(res[i].month+"-"+res[i].year)
-        // }
-        //     drawChart(date,revenue, str_dates)
-        // }
 
-fetchResponse('/app/'+company_id+'/company_cumulative_revenue', function(res){
-    // here the cumulative revenue is been recieved
-    var revenue=[],customers=[],date=[],str_dates =[]
-    for(var i=0;i<res.length;i++)
+function generate_tick_n_value(values)
+{
+    var arr1 = [];
+    for(var i=0;i<values.length;++i)
     {
-        revenue.push(res[i].cum_revenue)
-        date.push(i)
-        str_dates.push(res[i].month+"-"+res[i].year)
+        arr1.push(i)
+    }
+    return arr1;
+}
+
+function generate_tick_n_text(arr, key)
+{
+    result = [];
+    for(var i = 0 ; i < arr.length; ++i)
+    {
+        result.push(arr[i][key]);
     }
 
+    return result;
+}
 
-    fetchResponse('/app/'+company_id+'/company_cumulative_customer', function(res2)
+function generate_tick_n_value_reverse_order(values)
+{
+    var arr1 = [];
+    for(var i=values.length-1;i >= 0;--i)
     {
-        //cum_customers
-        for(var i=0;i<res2.length;i++)
-        {
-            customers.push(res2[i].cum_customers)
-        }
+        arr1.push(i)
+    }
+    return arr1;
+}
 
-        console.log(customers)
+function generate_tick_n_text_reverse_order(arr, key)
+{
+    result = [];
+    for(var i = arr.length - 1 ; i >= 0 ; --i)
+    {
+        result.push(arr[i][key]);
+    }
 
-        drawChart(date,revenue, str_dates, customers)
-    });
-})
+    return result;
+}
 
 
+function plot3(res,res2)
+{
+    xValues = generate_tick_n_value(res)
+    yValues = []
+    //xValues_trace2 = [];
+    yValues_trace2 =[]
+    textTickVals = [];
+    for(var i = 0 ; i < res.length; i++)
+    {
+        yValues.push(res[i]['percentage'])
+        textTickVals.push(res[i]['month']+'-'+res[i]['year'])
+        yValues_trace2.push(res2[i]['upsell_downsell'])
+    }
+    var trace1 = {
+    x: xValues,
+    y: yValues,
+    type: 'scatter',
+    name:'MRR churn Gross'
+    };
 
+    var trace2 = {
+    x: xValues,
+    y: yValues_trace2,
+    type: 'scatter',
+    name:'MRR Churn Net'
+    };
 
+    var data = [trace1,trace2];
+    var layout = {
+          title:'Gross & Net MRR Churn',
+        //   height: 500,
+        //   font: {
+        //     family: 'Lato',
+        //     size: 16,
+        //     color: 'rgb(100,150,200)'
+        //   },
+        //   plot_bgcolor: 'rgba(200,255,0,0.1)',
+          margin: {
+            pad: 10
+          },
+          xaxis: {
+            title: '',
+            titlefont: {
+              color: 'black',
+              size: 12
+            },
+            rangemode: '',
+            ticktext:textTickVals,
+            tickvals:xValues,
+            tickmode:"array",
 
+          },
+          yaxis: {
+            title: '',
+            titlefont: {
+              color: 'black',
+              size: 12
+            },
+            rangemode: ''
+          }
+        };
+    Plotly.newPlot('plot3', data,layout);
+}
 
+function plot4(res){
+            var xValues = generate_tick_n_value(res);
+            var yValues = generate_tick_n_text(res, "cohort_date");
+
+            var zValues = [];
+
+            for(var i = 0 ; i < res.length; i++)
+            {
+                // iterating each cohort
+                var cohort = res[i];
+                var heatmap_z_vals = [];
+                for(var j = 0 ; j < cohort.info.length; j++)
+                {
+                    var percentage = ((cohort.info[j][0] / cohort.info[0][0]) * 100).toFixed(1);
+                    heatmap_z_vals.push(percentage);
+                }
+                zValues.push(heatmap_z_vals);
+            }
+            
+            console.log(res);
+            console.log(res.length);
+            console.log(xValues);
+            console.log(yValues);
+            console.log(zValues);
+
+            var colorscaleValue = [
+                [0, 'red'],
+                [0.1, 'yellow'],
+                [0.2, 'green'],
+                [0.75, 'blue'],
+                [1, 'green']
+            ];
+
+            var data = [{
+            x: xValues,
+            y: yValues,
+            z: zValues,
+            type: 'heatmap',
+            colorscale: colorscaleValue,
+            // autocolorscale : true
+            zmin : 0,
+            zmax : 500
+            }];
+
+            var layout = {
+            title: 'Net MRR retention per Cohort',
+            annotations: [],
+            xaxis: {
+                ticks: '',
+                side: 'top'
+            },
+            yaxis: {
+                ticks: '',
+                ticksuffix: ' ',
+                width: 700,
+                height: 700,
+                autosize: false
+            }
+            };
+
+            for ( var i = 0; i < yValues.length; i++ ) {
+            for ( var j = 0; j < xValues.length; j++ ) {
+                var currentValue = zValues[i][j];
+                if (currentValue != 0.0) {
+                var textColor = 'white';
+                }else{
+                var textColor = 'black';
+                }
+                var result = {
+                xref: 'x1',
+                yref: 'y1',
+                x: xValues[j],
+                y: yValues[i],
+                text: zValues[i][j],
+                font: {
+                    family: 'Arial',
+                    size: 12,
+                    color: 'rgb(50, 171, 96)'
+                },
+                showarrow: false,
+                font: {
+                    color: textColor
+                }
+                };
+                layout.annotations.push(result);
+            }
+            }
+
+            Plotly.newPlot('plot4', data, layout);
+
+}
 
 </script>
+
 <script>
-    function drawChart(date, revenue, str_dates,customers)
+
+
+function get_month_year_from_date_string(Dateobj)
+ {
+     date = new Date(Dateobj)
+     console.log(date)    
+     return date.getDay()+'-'+date.getFullYear()
+
+ }
+
+function plot2RevenueExtractor(res, index)
+{
+    arr = [];
+
+    for(var i = 0; i < res[index].info.length; ++i)
+    {
+        arr.push(res[index].info[i][0])
+    }
+
+    return arr
+}
+
+function plot2DateExtractor(res, index, date_vs_index)
+{
+    arr = [];
+    for(var i = 0; i < res[index].info.length; ++i)
+    {
+        arr.push(date_vs_index[res[index].info[i][1]])
+    }
+    return arr
+}
+
+
+function plot2(res){
+    var stacksDiv = document.getElementById("plot2");
+    var traces = [];
+    var tick_vals = [];
+    var tick_text =[];
+
+    // generate a date to index map here
+    date_vs_index = {}
+    for(var i = 0; i < res[0].info.length; i++)
+    {
+        date_vs_index[res[0].info[i][1]] = i;
+        tick_vals.push(i)
+        date_splits = res[0].info[i][1].split("-")
+        tick_text.push(date_splits[1] + "-" + date_splits[0])
+    }
+
+    console.log("Date Vs Index")
+    console.log(date_vs_index)
+
+    traces.push({
+        name: res[0].cohort_date,
+        x : plot2DateExtractor(res, 0, date_vs_index),
+        y : plot2RevenueExtractor(res, 0),
+        fill : 'tozeroy'
+    });
+    for(var i = 1; i < res.length; ++i)
+    {
+        traces.push({
+            name: res[i].cohort_date,
+            x : plot2DateExtractor(res, i, date_vs_index),
+            y : plot2RevenueExtractor(res, i),
+            fill : 'tonexty'
+        });
+    }
+    
+    function stackedArea(traces) {
+        for(var i=1; i<traces.length; i++) {
+            startfrom = traces[i-1]['y'].length - traces[i]['y'].length;
+            for(var j=0; j < traces[i]['y'].length; j++) {
+                traces[i]['y'][j] += traces[i-1]['y'][j + startfrom];
+            }
+        }
+        return traces;
+    }
+    var layout ={
+         title:'MRR by Cohort',
+         xaxis: {
+            title: '',
+            titlefont: {
+              color: 'black',
+              size: 12
+            },
+            ticktext: tick_text,
+            tickvals: tick_vals,
+            tickmode:"array",
+          },
+        yaxis: {
+            title: 'MRR(€K)',
+            titlefont: {
+              color: 'black',
+              size: 12
+            },
+         
+          },
+      }
+
+
+      sTraces = stackedArea(traces)
+      console.log("stacked trace")
+      console.log(sTraces)
+
+    Plotly.newPlot(stacksDiv, sTraces
+    ,layout
+    );
+}
+   
+function plot1(date, revenue, str_dates,customers)
      {
-        var lineDiv = document.getElementById('line-chart');
+        var lineDiv = document.getElementById('plot1');
    
         var traceA = {
           x: date,
@@ -84,14 +419,14 @@ fetchResponse('/app/'+company_id+'/company_cumulative_revenue', function(res){
         var data = [traceA, traceB];
          
         var layout = {
-          title:'Total MRR (Monthly Recurring Revenue) and customers',
-          height: 500,
-          font: {
-            family: 'Lato',
-            size: 16,
-            color: 'rgb(100,150,200)'
-          },
-          plot_bgcolor: 'rgba(200,255,0,0.1)',
+          title:'Total Customers & MRR',
+        //   height: 500,
+        //   font: {
+        //     family: 'Lato',
+        //     size: 16,
+        //     color: 'rgb(100,150,200)'
+        //   },
+        //   plot_bgcolor: 'rgba(200,255,0,0.1)',
           margin: {
             pad: 10
           },
@@ -108,7 +443,7 @@ fetchResponse('/app/'+company_id+'/company_cumulative_revenue', function(res){
 
           },
           yaxis: {
-            title: '',
+            title: 'MRR(€K)',
             titlefont: {
               color: 'black',
               size: 12

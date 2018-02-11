@@ -3,6 +3,7 @@
 <html>
     <head>
         <title>Dashboard App</title>
+        <link href="{% static 'favicon/chart-152-215430.png' %}" rel="icon" type="image/x-icon" />
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
         <link rel="stylesheet" href="{% static 'css/app.css' %}">
@@ -27,19 +28,25 @@
                     {% endblock %}
                    <br>  
                     </div>
-                    <div class="col-md-12">                       
-                           
+                    <div class="col-md-12">                        
                             {% if messages %}
-                            
+                    
                                 {% for message in messages %}
                                 <div class="alert {{ message.tags }}">{{ message }}</div>
                                 {% endfor %}
                             
                             {% endif %}
                             
-                     </div>   
-
+                     </div>
             </div>
+            <div class="col-md-12">
+                    Instructions:
+                     <ul>
+                             <li>File must be a <b>CSV</b> file</li>
+                             <li>Three Columns are  allowed e.g. <b>Customer , Date , Revenue</b></li>
+                             <li>Date Format is <b>MM-DD-YYYY</b> e.g. <b>01 - 30- 2018</b> </li>
+                           </ul>
+                </div>  
         </div>
         </div>
         <div class="container">
@@ -57,7 +64,7 @@
                                 <tr>
                                   <th> {{ company.name }}</th>
                                   <th> {{ company.created_at }}</th>
-                                  <th><a href="/app/{{company.id}}/company-info/">View</a></th>
+                                  <th><a  class="btn btn-sm btn-primary"href="/app/{{company.id}}/company-info/">Open</a></th>
                                 </tr> 
                                 {% endfor %}
                          </table>

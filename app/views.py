@@ -37,7 +37,15 @@ def add_company(request):
                 #with transaction.atomic():
                 file = request.FILES["document"]
                 company_instance = form.save()
-                reader = csv.DictReader(decode_utf8(file))  
+                reader = csv.DictReader(decode_utf8(file))
+                #try:
+                   #if all(key in reader for key in ['Customer', 'Date', 'Revenue']):
+                    #   print('aaaa')
+                   #else:
+                    #   print("mae")    
+                #except:
+                    #print('a')
+                       
                 for row in reader:
                     company_log_instance = CompanyLog()
                     company_log_instance.company_id = company_instance.id
@@ -77,14 +85,19 @@ def company_info(request,company_id):
 
 ## AJAX REQUESTS 
 
-
 def company_cumulative_revenue(request,company_id):
     context = chart.get_cumulative_revenue_by_month_year(company_id)
     return context
-
 
 def company_cumulative_customer(request,company_id):
      data = chart.get_cumulative_customer_by_month_year(company_id)
      return data
 
+def company_observation_cohort(request,company_id):
+     data = chart.observation_cohort(company_id)
+     return data
+
+def company_gross_churn(request, company_id):
+    data = chart.get_gross_mrr_churn(company_id)
+    return data;     
 
